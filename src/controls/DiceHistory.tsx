@@ -9,6 +9,7 @@ import Tooltip from "@mui/material/Tooltip";
 
 import HistoryIcon from "@mui/icons-material/SavedSearchRounded";
 import NoHistoryIcon from "@mui/icons-material/ManageSearchRounded";
+import PushPinRoundedIcon from '@mui/icons-material/PushPinRounded';
 
 import { useDiceRollStore } from "../dice/store";
 import { RecentRoll, useDiceHistoryStore } from "./history";
@@ -44,6 +45,14 @@ export function DiceHistory() {
   function handleClose() {
     setAnchorEl(null);
   }
+
+  const pinnedRolls = useDiceHistoryStore((state) => state.pinnedRolls);
+  const removePinnedRoll = useDiceHistoryStore(
+    (state) => state.removePinnedRoll
+  );
+  const pushPinnedRoll = useDiceHistoryStore(
+    (state) => state.pushPinnedRoll
+  );
 
   const recentRolls = useDiceHistoryStore((state) => state.recentRolls);
   const removeRecentRoll = useDiceHistoryStore(
@@ -81,15 +90,32 @@ export function DiceHistory() {
         }}
       >
         <Stack width="200px" px={1} gap={0.5}>
+          {pinnedRolls.length > 0 && <Typography variant="caption" textAlign="center">
+            Pinned
+          </Typography>}
+          {pinnedRolls.map((pinnedRoll, index) => (
+            <PinnedRollChip
+              key={index}
+              pinnedRoll={pinnedRoll}
+              onRoll={() => handleRoll(pinnedRoll)}
+              onDelete={() => removePinnedRoll(index)}
+            />
+          ))}
+          {recentRolls.length > 0 && <Typography variant="caption" textAlign="center">
+            History
+          </Typography>}
           {recentRolls.map((recentRoll, index) => (
             <RecentRollChip
               key={index}
               recentRoll={recentRoll}
+              onPin={() => {
+                pushPinnedRoll(recentRoll)
+                removeRecentRoll(index)
+              }}
               onRoll={() => handleRoll(recentRoll)}
-              onDelete={() => removeRecentRoll(index)}
             />
           ))}
-          {recentRolls.length === 0 && <EmptyMessage />}
+          {recentRolls.length === 0 && pinnedRolls.length === 0 && <EmptyMessage />}
         </Stack>
       </Menu>
     </>
@@ -99,11 +125,11 @@ export function DiceHistory() {
 function RecentRollChip({
   recentRoll,
   onRoll,
-  onDelete,
+  onPin,
 }: {
   recentRoll: RecentRoll;
   onRoll: () => void;
-  onDelete: () => void;
+  onPin: () => void;
 }) {
   return (
     <Chip
@@ -141,6 +167,62 @@ function RecentRollChip({
           )}
           {recentRoll.advantage !== null && (
             <span>{recentRoll.advantage === "ADVANTAGE" ? "Adv" : "Dis"}</span>
+          )}
+        </Stack>
+      }
+      variant="outlined"
+      onClick={() => onRoll()}
+      onDelete={() => onPin()}
+      deleteIcon={<PushPinRoundedIcon fontSize="small" />}
+    />
+  );
+}
+
+function PinnedRollChip({
+  pinnedRoll,
+  onRoll,
+  onDelete,
+}: {
+  pinnedRoll: RecentRoll;
+  onRoll: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <Chip
+      sx={{
+        flexGrow: 1,
+        flexBasis: 0,
+        ".MuiChip-deleteIcon": {
+          position: "absolute",
+          right: 0,
+        },
+      }}
+      label={
+        <Stack direction="row" alignItems="center" gap={0.5} px={2}>
+          {Object.entries(pinnedRoll.counts).map(([id, count]) => {
+            const die = pinnedRoll.diceById[id];
+            if (!die || count === 0) {
+              return null;
+            }
+            return (
+              <Stack key={id} direction="row" alignItems="center" gap={0.25}>
+                {count}{" "}
+                <DicePreview
+                  diceStyle={die.style}
+                  diceType={die.type}
+                  size="small"
+                />
+              </Stack>
+            );
+          })}
+          {pinnedRoll.bonus !== 0 && (
+            <span>
+              {pinnedRoll.bonus > 0 && "+"}
+              {pinnedRoll.bonus}
+            </span>
+          )}
+          {pinnedRoll.advantage !== null && (
+            <span>{pinnedRoll.advantage === "ADVANTAGE" ? "Adv" : "Dis"}</span>
           )}
         </Stack>
       }

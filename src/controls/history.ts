@@ -14,12 +14,14 @@ interface DiceHistoryState {
   recentRolls: RecentRoll[];
   pushRecentRoll: (roll: RecentRoll) => void;
   removeRecentRoll: (index: number) => void;
+  pinnedRolls: RecentRoll[];
+  pushPinnedRoll: (roll: RecentRoll) => void;
+  removePinnedRoll: (index: number) => void;
 }
 
 export const useDiceHistoryStore = create<DiceHistoryState>()(
   immer((set) => ({
     recentRolls: [],
-    pinnedRolls: [],
     pushRecentRoll(roll) {
       set((state) => {
         if (state.recentRolls.length > 5) {
@@ -31,6 +33,17 @@ export const useDiceHistoryStore = create<DiceHistoryState>()(
     removeRecentRoll(index) {
       set((state) => {
         state.recentRolls.splice(index, 1);
+      });
+    },
+    pinnedRolls: [],
+    pushPinnedRoll(roll) {
+      set((state) => {
+        state.pinnedRolls.push(roll);
+      });
+    },
+    removePinnedRoll(index) {
+      set((state) => {
+        state.pinnedRolls.splice(index, 1);
       });
     },
   }))
